@@ -1,5 +1,4 @@
-import {getRandomPositiveInteger} from '../utils/get-random-positive-integer.js';
-import {getRandomArrayElement} from '../utils/get-random-array-element.js';
+import {getRandomPositiveInteger, getRandomArrayElement} from '../utils/utils.js';
 import {MOCK_NAMES, MOCK_TEXTS} from '../mock/mock-const.js';
 
 let mockPictureIndex = 1; //меняется внутри цикла
