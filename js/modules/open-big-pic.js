@@ -1,11 +1,17 @@
-// на вход я получаю event.target.
-// в нем я вижу, на какой минипик (объект) кликнули.
-// заполняю большую картинку данными из ивент таргета - тк это объект то должно показать все эти параметры
+const bigPic = document.querySelector('.big-picture');
+const closeBtn = bigPic.querySelector('.big-picture__cancel');
+const commentsList = bigPic.querySelector('.social__comments');
+const moreCommentsBtn = bigPic.querySelector('.comments-loader');
+const commentsCounterElem = bigPic.querySelector('.social__comment-count');
 
+let maxOpenComments;
+const stepToOpenComments = 5;
+
+//возвращает единую строку разметки
 const createCommentsHtml = (commentObjArray) => {
   let commentsString = '';
 
-  for (let commentObj of commentObjArray) {
+  for (const commentObj of commentObjArray) {
     const commentHTML = `
     <li class="social__comment">
       <img
@@ -21,36 +27,73 @@ const createCommentsHtml = (commentObjArray) => {
   return commentsString;
 };
 
+//вырезаю нужный кусок массива и скармливаю его функции, кот сделает из массива разметку(строку) и вставит в страницу
+const drawComments = (commentsArr) => {
+  const commentsObjectsToShow = commentsArr.slice(0, maxOpenComments);
+  commentsCounterElem.textContent = `${commentsObjectsToShow.length} из ${commentsArr.length}`;
 
-const fillBigPicData = (clickedMinipicObj, bigPic) => {
-  bigPic.querySelector('.big-picture__img').src = clickedMinipicObj.url;
-  bigPic.querySelector('.likes-count').textContent = clickedMinipicObj.likes;
-  bigPic.querySelector('.comments-count').textContent = clickedMinipicObj.comments.length;
-  bigPic.querySelector('.social__caption').textContent = clickedMinipicObj.description;
+  commentsList.innerHTML = createCommentsHtml(commentsObjectsToShow);
+};
 
-  const commentsList = bigPic.querySelector('.social__comments');
+const onMoreCommentsClick = (commentsArray) => {
+  maxOpenComments += stepToOpenComments;
+  if (commentsArray.length <= maxOpenComments) {
+    moreCommentsBtn.hidden = true;
+    moreCommentsBtn.removeEventListener('click', () => onMoreCommentsClick(commentsArray));
+  }
+  drawComments(commentsArray);
+};
+
+const fillBigPicData = (clickedMinipicObj, bigpic) => {
+  bigpic.querySelector('.big-picture__img').src = clickedMinipicObj.url;
+  bigpic.querySelector('.likes-count').textContent = clickedMinipicObj.likes;
+  bigpic.querySelector('.comments-count').textContent = clickedMinipicObj.comments.length;
+  bigpic.querySelector('.social__caption').textContent = clickedMinipicObj.description;
+
   commentsList.innerHTML = '';
+  const commentsArray = clickedMinipicObj.comments;
+  maxOpenComments = 5;
 
-  if (clickedMinipicObj.comments.length) {
-    commentsList.innerHTML = createCommentsHtml(clickedMinipicObj.comments);
+  drawComments(commentsArray, maxOpenComments);
+
+  if (commentsArray.length > 5) {
+    moreCommentsBtn.addEventListener('click', () => onMoreCommentsClick(commentsArray));
+  } else {
+    moreCommentsBtn.hidden = true;
   }
 };
 
+const onCloseBtnClick = () => {
+  closeBigPic();
+};
+
+const onBigPicESCKeydown = (evt) => {
+  if (evt.key !== 'Escape') { return; }
+  closeBigPic();
+};
+
+//мини-жертва синтаксиса, тк используется выше в функциях
+function closeBigPic() {
+  bigPic.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  closeBtn.removeEventListener('click', onCloseBtnClick);
+  document.removeEventListener('keydown', onBigPicESCKeydown);
+
+  if (!moreCommentsBtn.hidden) {
+    moreCommentsBtn.removeEventListener('click', onMoreCommentsClick);
+  }
+  maxOpenComments = 5;
+
+}
 
 const openBigPic = (clickedMinipicObj) => {
-  const bigPic = document.querySelector('.big-picture');
   bigPic.classList.remove('hidden');
-
-  fillBigPicData(clickedMinipicObj, bigPic);
-  bigPic.querySelector('.social__comment-count').classList.add('hidden');
-  bigPic.querySelector('.comments-loader').classList.add('hidden');
-
   document.body.classList.add('modal-open'); //чтобы фон не скролился
 
-  //ДОДЕЛАТЬ слушатели
-  const closeBtn = bigPic.querySelector('.big-picture__cancel');
-  //closeBtn.addEventListener('click', closeBigPicClick);
-  //closeBtn.addEventListener('keydown', (evt) => closeBigPicKeydown);
+  fillBigPicData(clickedMinipicObj, bigPic);
+
+  closeBtn.addEventListener('click', onCloseBtnClick);
+  document.addEventListener('keydown', onBigPicESCKeydown);
 };
 
 export {openBigPic};

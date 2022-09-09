@@ -7,6 +7,8 @@ const closeButton = uploadImageForm.querySelector('#upload-cancel');
 
 const uploadHashtagInput = uploadImageForm.querySelector('.text__hashtags');
 const uploadCommentTextarea = uploadImageForm.querySelector('.text__description');
+
+//const formCommentsCount =
 const uploadSubmitBtn = uploadImageForm.querySelector('#upload-submit');
 
 //пока тут изображение тестовое. должно подставляться то, что я выбираю в uploadImageInput
