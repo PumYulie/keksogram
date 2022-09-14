@@ -1,5 +1,12 @@
 import {isEnterKey, isEscapeKey} from '../utils/utils.js';
+import {onHashtagInputInput} from './edit-uploadable-image.js';
 
+//в этом модуле
+//открываю окно с подгрузкой изображения,
+//создаю DOM-элементы этого окна,
+//навешиваю слушатели на все интерактивные элементы,
+//отправляю новое изображение на сервер по кнопке сабмит,
+//или закрываю окно (со снятием слушателей с интерактивных элементов)
 
 const uploadImageInput = document.querySelector('#upload-file');
 const uploadImageForm = document.querySelector('.img-upload__overlay');
@@ -8,7 +15,6 @@ const closeButton = uploadImageForm.querySelector('#upload-cancel');
 const uploadHashtagInput = uploadImageForm.querySelector('.text__hashtags');
 const uploadCommentTextarea = uploadImageForm.querySelector('.text__description');
 
-//const formCommentsCount =
 const uploadSubmitBtn = uploadImageForm.querySelector('#upload-submit');
 
 //пока тут изображение тестовое. должно подставляться то, что я выбираю в uploadImageInput
@@ -17,6 +23,10 @@ const uploadableImagePreview = uploadImageForm.querySelector('.img-upload__previ
 const closeUploadImageForm = () => {
   document.body.classList.remove('modal-open');
   uploadImageForm.classList.add('hidden');
+
+  //сбросить все навешенные слушатели с интерактивных элементов??
+  //с uploadHashtagInput ? (навешиваю в openUploadImageForm)
+
   //ПОКА НЕ РАБОТАЕТ, а надо сбрасывать
   //uploadImageInput.value = '';
 };
@@ -28,9 +38,9 @@ const onFormCloseBtnClick = (evt) => {
   document.removeEventListener('keydown', onOpennedFormKeydown);
 };
 
-//мини-жертва, чтобы пойти дальше. тк используется ВЫШЕ в onFormCloseBtnClick
+//мини-жертва, тк используется ВЫШЕ в onFormCloseBtnClick
 function onOpennedFormKeydown (evt) {
-  if (isEscapeKey(evt) && uploadHashtagInput !== document.activeElement &&uploadCommentTextarea !== document.activeElement) {
+  if (isEscapeKey(evt) && uploadHashtagInput !== document.activeElement && uploadCommentTextarea !== document.activeElement) {
     evt.preventDefault(); //иначе яблочники вылетают из полноэкранного режима
     closeUploadImageForm();
     closeButton.removeEventListener('click', onFormCloseBtnClick);
@@ -41,6 +51,9 @@ function onOpennedFormKeydown (evt) {
 const openUploadImageForm = () => {
   uploadImageForm.classList.remove('hidden');
   document.body.classList.add('modal-open');
+
+  // навешиваю каждый раз. или навесить просто чтобы всегода был???
+  uploadHashtagInput.addEventListener('input', (evt) => onHashtagInputInput(evt, uploadHashtagInput));
 
   document.addEventListener('keydown', onOpennedFormKeydown);
   closeButton.addEventListener('click', onFormCloseBtnClick);
@@ -59,75 +72,61 @@ const onUploadImageBtnKeydown = (evt) => {
 uploadImageInput.addEventListener('click', onUploadImageBtnClick);
 uploadImageInput.addEventListener('keydown', onUploadImageBtnKeydown);
 
+// изменение масштаба изображения
+const scaleBiggerBtn = uploadImageForm.querySelector('.scale__control--bigger');
+const scaleSmallerBtn = uploadImageForm.querySelector('.scale__control--smaller');
+const currentScaleInput = uploadImageForm.querySelector('.scale__control--value');
 
-// валидация хэштегов начало
-
-let hashtagsArray = [];
-
-const ifHashtagsRepeat = (value) => {
-  hashtagsArray = value
-    .split('#')
-    .filter((item) => item !== '')
-    .map((item) => item.trim())
-    .filter((item) => item !== '')
-    .map((item) => item.toUpperCase());
-
-  for (let i = 0; i < hashtagsArray.length; i++) {
-    //в массиве останется минимум 1 item, который сравнивали со всеми
-    const result = hashtagsArray.filter((item) => item === hashtagsArray[i]);
-    if (result.length > 1) {
-      uploadHashtagInput.setCustomValidity('Нельзя повторять #хэштеги,даже разными регистрами букв');
-      return;
-    }
+/* const onScaleBiggerBtnClick = () => {
+  if (currentScaleInput.value === '100%') {
+    console.log('уже 100, я ухожу');
+    return;
   }
-};
-
-const onHashtagInputInput = (evt) => {
-  const value = uploadHashtagInput.value;
-
-  if (uploadHashtagInput.validity.tooShort) {
-    if (value.length === 1 && value !== '#') {
-      uploadHashtagInput.value = '#';
-    }
-    uploadHashtagInput.setCustomValidity('Допишите имя хэштега: #хэштег');
-  } else if (uploadHashtagInput.validity.tooLong) {
-    uploadHashtagInput.setCustomValidity(`Максимум 25 символов, удалите ${value.length - 25}`);
-
-  } else if (value.length > 1 && evt.data) {//если стирают, evt.data = null
-    if (!evt.data.match(/[0-9А-Яа-я#\s]/)) {
-      uploadHashtagInput.setCustomValidity(`${evt.data} - недопустимый символ`);
-    } else if (value.match(/#\s/)) {
-      uploadHashtagInput.setCustomValidity('Все #хэштеги должны иметь минимум 1 знак после #');
-    } else if (evt.data.match('#')) {
-      const totalHashesArr = value.match(/#/g);//массив из #
-      if (totalHashesArr.length > 1) {
-        uploadHashtagInput.setCustomValidity('Допишите имя хэштега, минимум 1 букву');
-        if (value[-2] !== ' ') {
-          uploadHashtagInput.value = `${value.slice(0, -1)} #`;
-        }
-      }
-      if (totalHashesArr.length > 5) {
-        uploadHashtagInput.setCustomValidity('Допустимо максимум 5 хэштегов, удалите лишний хэштег');
-      }
-    } else if (evt.data.match(' ')){
-      uploadHashtagInput.setCustomValidity('Каждый хэштег начинайте с #');
-      uploadHashtagInput.value = `${value.slice(0, -1)} #`;
-      ifHashtagsRepeat(value);
-    } else {
-      uploadHashtagInput.setCustomValidity('');
-    }
-
+  const newValueNumber = Number(currentScaleInput.value.slice(0, -1)) + 25;
+  console.log('newValueNumber', newValueNumber, 'работает onScaleBiggerBtnClick');
+  if (newValueNumber > 100) {
+    currentScaleInput.value = '100%';
   } else {
-    uploadHashtagInput.setCustomValidity('');
+    currentScaleInput.value = `${newValueNumber}%`;
   }
+}; */
 
-  uploadHashtagInput.reportValidity();
+/* const onScaleBiggerBtnKeydown = (evt) => {
+  if (isEnterKey(evt)) {
+    onScaleBiggerBtnClick();
+  }
+}; */
+
+const onScaleSmallerBtnClick = () => {
+  if (currentScaleInput.value === '0%') {
+    console.log('уже 0, я ухожу');
+    return;
+  }
+  const inputValueNumbered = Number(currentScaleInput.value.slice(0, -1));
+  console.log('onScaleSmallerBtnClick обрезает до числа', inputValueNumbered);
+
+  console.log('иду присваивать в поле вода значение', inputValueNumbered);
+  if ((inputValueNumbered - 25) <= 0) {
+    currentScaleInput.value = '0%';
+  } else {
+    console.log('калькулирую');
+    currentScaleInput.value = `${inputValueNumbered - 25}%`;
+    console.log('итоговое currentScaleInput.value', currentScaleInput.value);
+  }
 };
 
-uploadHashtagInput.addEventListener('input', onHashtagInputInput);
-//валидация хэштегов закончилась
+const onScaleSmallerBtnKeydown = (evt) => {
+  if (!isEnterKey(evt)) { return; }
 
+  console.log('норм, обработчик вызывается 1раз, ДО вызова в поле', currentScaleInput.value);
+  onScaleSmallerBtnClick();
+};
 
+//scaleBiggerBtn.addEventListener('click', onScaleBiggerBtnClick);
+//scaleBiggerBtn.addEventListener('keydown', onScaleBiggerBtnKeydown);
+
+scaleSmallerBtn.addEventListener('click', onScaleSmallerBtnClick);
+scaleSmallerBtn.addEventListener('keydown', onScaleSmallerBtnKeydown);
 
 //uploadSubmitBtn.addEventListener('click', onUploadSubmitBtnClick);
 //uploadSubmitBtn.addEventListener('keydown', onUploadSubmitBtnKeydown);
