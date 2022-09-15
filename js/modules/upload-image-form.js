@@ -1,5 +1,5 @@
 import {isEnterKey, isEscapeKey} from '../utils/utils.js';
-import {onHashtagInputInput} from './edit-uploadable-image.js';
+import {onHashtagInputInput, onScaleWrapperKeydown, onScaleWrapperMousedown, onRadioBtnChange} from './edit-uploadable-image.js';
 
 //в этом модуле
 //открываю окно с подгрузкой изображения,
@@ -15,10 +15,9 @@ const closeButton = uploadImageForm.querySelector('#upload-cancel');
 const uploadHashtagInput = uploadImageForm.querySelector('.text__hashtags');
 const uploadCommentTextarea = uploadImageForm.querySelector('.text__description');
 
-const uploadSubmitBtn = uploadImageForm.querySelector('#upload-submit');
 
 //пока тут изображение тестовое. должно подставляться то, что я выбираю в uploadImageInput
-const uploadableImagePreview = uploadImageForm.querySelector('.img-upload__preview');
+const imagePreview = uploadImageForm.querySelector('.img-upload__preview').querySelector('img');
 
 const closeUploadImageForm = () => {
   document.body.classList.remove('modal-open');
@@ -72,62 +71,26 @@ const onUploadImageBtnKeydown = (evt) => {
 uploadImageInput.addEventListener('click', onUploadImageBtnClick);
 uploadImageInput.addEventListener('keydown', onUploadImageBtnKeydown);
 
+
 // изменение масштаба изображения
+const scaleWrapper = uploadImageForm.querySelector('.scale');
 const scaleBiggerBtn = uploadImageForm.querySelector('.scale__control--bigger');
 const scaleSmallerBtn = uploadImageForm.querySelector('.scale__control--smaller');
 const currentScaleInput = uploadImageForm.querySelector('.scale__control--value');
 
-/* const onScaleBiggerBtnClick = () => {
-  if (currentScaleInput.value === '100%') {
-    console.log('уже 100, я ухожу');
-    return;
-  }
-  const newValueNumber = Number(currentScaleInput.value.slice(0, -1)) + 25;
-  console.log('newValueNumber', newValueNumber, 'работает onScaleBiggerBtnClick');
-  if (newValueNumber > 100) {
-    currentScaleInput.value = '100%';
-  } else {
-    currentScaleInput.value = `${newValueNumber}%`;
-  }
-}; */
+scaleWrapper.addEventListener('mousedown', (evt) => onScaleWrapperMousedown(evt, scaleBiggerBtn, scaleSmallerBtn, currentScaleInput, imagePreview));
 
-/* const onScaleBiggerBtnKeydown = (evt) => {
-  if (isEnterKey(evt)) {
-    onScaleBiggerBtnClick();
-  }
-}; */
+scaleWrapper.addEventListener('keydown', (evt) => onScaleWrapperKeydown(evt, scaleBiggerBtn, scaleSmallerBtn, currentScaleInput, imagePreview));
 
-const onScaleSmallerBtnClick = () => {
-  if (currentScaleInput.value === '0%') {
-    console.log('уже 0, я ухожу');
-    return;
-  }
-  const inputValueNumbered = Number(currentScaleInput.value.slice(0, -1));
-  console.log('onScaleSmallerBtnClick обрезает до числа', inputValueNumbered);
 
-  console.log('иду присваивать в поле вода значение', inputValueNumbered);
-  if ((inputValueNumbered - 25) <= 0) {
-    currentScaleInput.value = '0%';
-  } else {
-    console.log('калькулирую');
-    currentScaleInput.value = `${inputValueNumbered - 25}%`;
-    console.log('итоговое currentScaleInput.value', currentScaleInput.value);
-  }
-};
+// наложение эффекта поверх фото
+const effectsList = uploadImageForm.querySelector('.effects__list'); //ul
+const sliderContainer = uploadImageForm.querySelector('.effect-level__slider');
+const effectLevelInput = uploadImageForm.querySelector('.effect-level__value');
 
-const onScaleSmallerBtnKeydown = (evt) => {
-  if (!isEnterKey(evt)) { return; }
+effectsList.addEventListener('change', (evt) => onRadioBtnChange(evt, sliderContainer, imagePreview, effectLevelInput));
 
-  console.log('норм, обработчик вызывается 1раз, ДО вызова в поле', currentScaleInput.value);
-  onScaleSmallerBtnClick();
-};
-
-//scaleBiggerBtn.addEventListener('click', onScaleBiggerBtnClick);
-//scaleBiggerBtn.addEventListener('keydown', onScaleBiggerBtnKeydown);
-
-scaleSmallerBtn.addEventListener('click', onScaleSmallerBtnClick);
-scaleSmallerBtn.addEventListener('keydown', onScaleSmallerBtnKeydown);
-
-//uploadSubmitBtn.addEventListener('click', onUploadSubmitBtnClick);
+//const uploadSubmitBtn = uploadImageForm.querySelector('#upload-submit');
+//uploadSubmitBtn.addEventListener('mousedown', onUploadSubmitBtnClick);
 //uploadSubmitBtn.addEventListener('keydown', onUploadSubmitBtnKeydown);
 

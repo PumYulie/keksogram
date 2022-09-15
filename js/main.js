@@ -7,4 +7,4 @@ const mockPicObjects = generateMockPictureDescriptions();
 //console.log(mockPicObjects[0]);
 drawMinipics(mockPicObjects);
 
-openBigPic(mockPicObjects[0]);
+//openBigPic(mockPicObjects[0]);

@@ -1,3 +1,5 @@
+import {isEnterKey} from '../utils/utils.js';
+
 //валидация хэштегов
 
 let hashtagsArray = [];
@@ -65,5 +67,114 @@ const onHashtagInputInput = (evt, inputElem) => {
 
 // изменение масштаба изображения
 
+const onScaleWrapperMousedown = (evt, biggerBtn, smallerBtn, inputElem, img) => {
+  if (evt.target !== biggerBtn && evt.target !== smallerBtn) { return; }
 
-export {onHashtagInputInput};
+  let number = Number(inputElem.value.slice(0, -1));
+
+  if (evt.target === biggerBtn) {
+    number += 25;
+    if (number >= 100) {
+      inputElem.value = '100%';
+      img.style.transform = 'scale(1)';
+      return;
+    }
+  }
+
+  if (evt.target === smallerBtn) {
+    number -= 25;
+    if (number <= 0) {
+      inputElem.value = '0%';
+      img.style.transform = 'scale(0.05)';
+      return;
+    }
+  }
+
+  inputElem.value = `${number}%`;
+  img.style.transform = `scale(${number / 100})`;
+};
+
+const onScaleWrapperKeydown = (evt, biggerBtn, smallerBtn, inputElem, img) => {
+  if (!isEnterKey(evt)) { return; }
+  onScaleWrapperMousedown(evt, biggerBtn, smallerBtn, inputElem, img);
+};
+
+
+// наложение эффекта поверх фото
+const onRadioBtnChange = (evt, sliderBox, img, hiddenInput) => {
+  if (!evt.target.classList.contains('effects__radio')) { return; }
+
+  if (sliderBox.noUiSlider) { //чтобы слайдер новый под каждый эффект
+    sliderBox.noUiSlider.destroy();
+  }
+
+  if (evt.target.id === 'effect-none') {
+    img.className = '';
+    img.style.filter = '';
+    return;
+  }
+
+  const newClass = `effects__preview--${evt.target.id.slice(7)}`;
+  img.className = newClass;
+
+  //создаю слайдер
+  let sliderMin = 0;
+  let sliderMax = 100;
+  let formatToFunction = (value) => +(value / 100).toFixed(1);
+
+  if (newClass.includes('marvin')) {
+    formatToFunction = (value) => `${value}%`;
+  }
+
+  if (newClass.includes('phobos')) {
+    sliderMin = 1;
+    sliderMax = 300;
+    formatToFunction = (value) => `${(value / 100).toFixed(1)}px`;
+  }
+
+  if (newClass.includes('heat')) {
+    sliderMin = 100;
+    sliderMax = 300;
+  }
+
+  hiddenInput.value = sliderMax; //вписываю в скрытое поле
+
+  noUiSlider.create(sliderBox, {
+    range: {
+      min: sliderMin,
+      max: sliderMax,
+    },
+    start: sliderMax,
+    step: 1,
+    connect: 'lower',
+    format: {
+      to: formatToFunction,
+      from: (value) => parseFloat(value),
+    },
+  });
+
+  //слайдер отдает в нужном формате благодаря formatToFunction
+  //навешиваю на слайдер слушатель на каждое изменение слайдера
+  sliderBox.noUiSlider.on('update', (values, handle) => {
+    //Уровень эффекта записывается в скрытое поле для отправки на сервер
+    hiddenInput.value = +(values[handle] * 100).toFixed(0);
+
+    if (newClass.includes('chrome')) {
+      img.style.filter = `grayscale(${values[handle]})`;
+    } else if (newClass.includes('sepia')) {
+      img.style.filter = `sepia(${values[handle]})`;
+    } else if (newClass.includes('marvin')) {
+      img.style.filter = `invert(${values[handle]})`;
+      hiddenInput.value = parseInt(values[handle], 10);
+    } else if (newClass.includes('phobos')) {
+      img.style.filter = `blur(${values[handle]})`;
+      hiddenInput.value = +(values[handle].slice(0, -2) * 100).toFixed(0);
+    } else if (newClass.includes('heat')) {
+      img.style.filter = `brightness(${values[handle]})`;
+    }
+  });
+
+};
+
+
+export {onHashtagInputInput, onScaleWrapperMousedown, onScaleWrapperKeydown, onRadioBtnChange};
